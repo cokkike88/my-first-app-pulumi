@@ -86,3 +86,25 @@ frontend_container = docker.Container("frontend_container",
                                           name=network.name
                                       )]
                                       )
+
+data_seed_container = docker.Container("data_seed_container",
+                                       image=mongo_image.latest,
+                                       name='data_seed',
+                                       must_run=False,
+                                       rm=True,
+                                       opts=pulumi.ResourceOptions(depends_on=[backend_container]),
+                                       mounts=[docker.ContainerMountArgs(
+                                           target='/home/products.json',
+                                           type="bind",
+                                           source=f'{os.getcwd()}/products.json'
+                                       )],
+                                       command=[
+                                           'sh', '-c',
+                                           'mongoimport --host mongo --db cart --collection products --type json --file /home/products.json --jsonArray'
+                                       ],
+                                       networks_advanced=[docker.ContainerNetworksAdvancedArgs(
+                                           name=network.name
+                                       )]
+                                       )
+
+pulumi.export("url", f"http://localhost:{frontend_port}")
